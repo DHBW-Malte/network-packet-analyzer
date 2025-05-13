@@ -1,0 +1,28 @@
+# Build artifacts
+*.o
+*.out
+*.a
+*.so
+*.exe
+*.elf
+
+# Binary files
+netanalyzer
+build/
+
+# Core dumps
+core
+core.*
+
+# Editor/IDE-spezifisch
+*~
+*.swp
+*.swo
+*.bak
+
+# Logs
+*.log
+
+# Libpcap dumps
+*.pcap
+*.pcapng

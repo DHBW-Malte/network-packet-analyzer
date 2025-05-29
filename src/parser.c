@@ -1,6 +1,13 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <arpa/inet.h>
 #include "../include/parser.h"
+
+struct ethernet_header {
+    uint8_t dest_mac[6];
+    uint8_t src_mac[6];
+    uint16_t ethertype;
+};
 
 // Helper function to print MAC address in readable format
 void print_mac(const u_char* mac) {
@@ -9,20 +16,19 @@ void print_mac(const u_char* mac) {
 }
 
 // Function to parse the Ethernet header (first 14 bytes of the packet)
-void parse_ethernet_header(const u_char* packet, int length) {
+void parse_ethernet_layer(const u_char* packet, int length) {
     if (length < 14) {
-        printf("Packet too short for Ethernet header.\n");
+        printf("❌ Packet too short for Ethernet header.\n");
         return;
     }
 
-    const u_char* dest_mac = packet;
-    const u_char* src_mac = packet + 6;
-    uint16_t ethertype = (packet[12] << 8) | packet[13];
+    const struct ethernet_header* eth = (const struct ethernet_header*) packet;
+    uint16_t ethertype = ntohs(eth->ethertype);  // Using ntohs to ensure the correct reading order
 
     printf("[Ethernet] ");
-    print_mac(src_mac);
+    print_mac(eth->src_mac);
     printf(" → ");
-    print_mac(dest_mac);
+    print_mac(eth->dest_mac);
     printf(" | Type: ");
 
     switch (ethertype) {

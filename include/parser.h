@@ -3,6 +3,6 @@
 
 #include <pcap.h>
 
-void parse_ethernet_header(const u_char* packet, int length);
+void parse_ethernet_layer(const u_char* packet, int length);
 
 #endif

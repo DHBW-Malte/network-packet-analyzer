@@ -8,7 +8,7 @@ void packet_handler(u_char *args, const struct pcap_pkthdr *header, const u_char
     printf("Captured a packet with length of [%d]\n", header->len);
 
     // Printing first network layer
-    parse_ethernet_header(packet, header->len);
+    parse_ethernet_layer(packet, header->len);
 }
 
 // Function to capture packets of the selected interface

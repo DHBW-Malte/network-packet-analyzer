@@ -1,12 +1,38 @@
 #include <pcap.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <string.h>
 #include "../include/capture.h"
 
 #define MAX_DEVICES 32
 
-int main() {
+void print_usage(const char* program_name) {
+    fprintf(stderr, "Usage: %s [-c packet_count]\n", program_name);
+    fprintf(stderr, "Options:\n");
+    fprintf(stderr, "  -c <count>     Number of packets to capture (default: 10)\n");
+}
+
+int main(int argc, char* argv[]) {
+    int opt;
+    int packet_count = 10; // Default value
+    
+    // Parsing of arguments
+    while ((opt = getopt(argc, argv, "c:h")) != -1) {
+        switch (opt) {
+            case 'c':
+                packet_count = atoi(optarg);
+                break;
+            case 'h':
+                print_usage(argv[0]);
+                exit(0);
+            case '?': // unknown or invalid argument
+                print_usage(argv[0]);
+                exit(1);
+        }
+    }
+    
+
     pcap_if_t *alldevs, *dev;
     char errbuf[PCAP_ERRBUF_SIZE];
     char* device_names[MAX_DEVICES];
@@ -52,7 +78,7 @@ int main() {
 
     // Start capture
     printf("\n✅ Starting capture on device: %s\n\n", device_names[choice - 1]);
-    start_capture(device_names[choice - 1]);
+    start_capture(device_names[choice - 1], packet_count);
 
     // Clean-up
     for (int i = 0; i < device_count; i++) {

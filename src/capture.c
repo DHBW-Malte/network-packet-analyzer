@@ -8,7 +8,7 @@ void packet_handler(u_char *args, const struct pcap_pkthdr *header, const u_char
 }
 
 // Function to capture packets of the selected interface
-void start_capture(const char* interface) {
+void start_capture(const char* interface, int packet_count) {
     char errbuf[PCAP_ERRBUF_SIZE];
 
     // Open the network interface for live packet capture
@@ -22,6 +22,6 @@ void start_capture(const char* interface) {
         return;
     }
     // Start of the loop to capture the packets
-    pcap_loop(handle, 10, packet_handler, NULL); // capture 10 packets
+    pcap_loop(handle, packet_count, packet_handler, NULL); // capture 10 packets
     pcap_close(handle);
 }

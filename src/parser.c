@@ -4,6 +4,7 @@
 #include <netinet/in.h>
 #include "../include/parser.h"
 #include "../include/utils.h"
+#include <string.h>
 
 struct ethernet_header {
     uint8_t dest_mac[6];
@@ -74,10 +75,10 @@ uint16_t parse_ethernet_layer(const u_char* packet, int length) {
 }
 
 // Function to parse the IPv4 layer header
-void parse_ipv4_layer(const u_char* packet, int length) {
+uint8_t parse_ipv4_layer(const u_char* packet, int length, packet_summary_t* summary) {
     if (length < 14 + 20) {
         printf("  └─ ❌ Packet too short for IPv4 header.\n");
-        return;
+        return 0;
     }
 
     // IPv4-Header starts after 14 bytes (after ethernet header)
@@ -97,13 +98,19 @@ void parse_ipv4_layer(const u_char* packet, int length) {
            version, ihl, ihl * 4, total_length, get_protocol_name(protocol));
     printf("     └─ Src IP: %s\n", src_ip);
     printf("     └─ Dst IP: %s\n", dest_ip);
+
+    summary->protocol = protocol;
+    strncpy(summary->src_ip, src_ip, INET6_ADDRSTRLEN);
+    strncpy(summary->dst_ip, dest_ip, INET6_ADDRSTRLEN);
+
+    return protocol;
 }
 
 // Function to parse the IPv6 layer header
-void parse_ipv6_layer(const u_char* packet, int length) {
+uint8_t parse_ipv6_layer(const u_char* packet, int length, packet_summary_t* summary) {
     if (length < 14 + 40) {
         printf("  └─ ❌ Packet too short for IPv6 header.\n");
-        return;
+        return 0;
     }
 
     const u_char* ip_start = packet + 14;
@@ -125,10 +132,16 @@ void parse_ipv6_layer(const u_char* packet, int length) {
            version, payload_length, get_protocol_name(next_header), hop_limit);
     printf("     └─ Src IP: %s\n", src_ip);
     printf("     └─ Dst IP: %s\n", dest_ip);
+
+    summary->protocol = next_header;
+    strncpy(summary->src_ip, src_ip, INET6_ADDRSTRLEN);
+    strncpy(summary->dst_ip, dest_ip, INET6_ADDRSTRLEN);
+
+    return next_header;
 }
 
-void parse_arp_layer(const u_char* packet, int length) {
-    if (length < 14 + sizeof(struct arp_header)) {
+void parse_arp_layer(const u_char* packet, int length, packet_summary_t* summary) {
+    if ((size_t)length < 14 + sizeof(struct arp_header)) {
         printf("  └─ ❌ Packet too short for ARP header.\n");
         return;
     }
@@ -148,4 +161,8 @@ void parse_arp_layer(const u_char* packet, int length) {
     printf("     └─ Target MAC: ");
     print_mac(arp->target_mac);
     printf(" | Target IP: %s\n", target_ip);
+
+    summary->protocol = 0;  // No protocol for ARP
+    strncpy(summary->src_ip, sender_ip, INET6_ADDRSTRLEN);
+    strncpy(summary->dst_ip, target_ip, INET6_ADDRSTRLEN);
 }

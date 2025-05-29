@@ -11,7 +11,10 @@ void packet_handler(u_char *args, const struct pcap_pkthdr *header, const u_char
     // Printing third network layer
     if (ethertype == 0x0800) { // Parsing if type is IPv4
         parse_ipv4_layer(packet, header->len);
-    } 
+    }
+    if (ethertype == 0x86DD) { // Parsing if type is IPv6
+        parse_ipv6_layer(packet, header->len);
+    }
 }
 
 // Function to capture packets of the selected interface

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <arpa/inet.h>
+#include <netinet/in.h>
 #include "../include/parser.h"
 #include "../include/utils.h"
 
@@ -21,6 +22,15 @@ struct ipv4_header {
     uint16_t checksum;
     uint32_t src_ip;
     uint32_t dest_ip;
+};
+
+struct ipv6_header {
+    uint32_t version_tc_fl;
+    uint16_t payload_length;
+    uint8_t next_header;
+    uint8_t hop_limit;
+    struct in6_addr src_ip;
+    struct in6_addr dest_ip;
 };
 
 // Function to parse the Ethernet header (first 14 bytes of the packet)
@@ -73,6 +83,34 @@ void parse_ipv4_layer(const u_char* packet, int length) {
 
     printf("  └─ [IPv4] Version: %d | IHL: %d (×4 = %d bytes) | Length: %d | Protocol: %s\n",
            version, ihl, ihl * 4, total_length, get_protocol_name(protocol));
+    printf("     └─ Src IP: %s\n", src_ip);
+    printf("     └─ Dst IP: %s\n", dest_ip);
+}
+
+// Function to parse the IPv6 layer header
+void parse_ipv6_layer(const u_char* packet, int length) {
+    if (length < 14 + 40) {
+        printf("  └─ ❌ Packet too short for IPv6 header.\n");
+        return;
+    }
+
+    const u_char* ip_start = packet + 14;
+
+    // First 4 bytes: Version (4), Traffic Class (8), Flow Label (20)
+    uint32_t version_tc_fl = ntohl(*(uint32_t*)ip_start);
+    uint8_t version = (version_tc_fl >> 28) & 0x0F;
+
+    uint16_t payload_length = ntohs(*(uint16_t*)(ip_start + 4));
+    uint8_t next_header = *(ip_start + 6);
+    uint8_t hop_limit = *(ip_start + 7);
+
+    char src_ip[INET6_ADDRSTRLEN];
+    char dest_ip[INET6_ADDRSTRLEN];
+    inet_ntop(AF_INET6, ip_start + 8, src_ip, sizeof(src_ip));
+    inet_ntop(AF_INET6, ip_start + 24, dest_ip, sizeof(dest_ip));
+
+    printf("  └─ [IPv6] Version: %d | Payload Length: %d | Next Header: %s | Hop Limit: %d\n",
+           version, payload_length, get_protocol_name(next_header), hop_limit);
     printf("     └─ Src IP: %s\n", src_ip);
     printf("     └─ Dst IP: %s\n", dest_ip);
 }

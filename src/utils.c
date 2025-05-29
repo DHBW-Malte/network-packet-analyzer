@@ -1,11 +1,22 @@
 #include <stdio.h>
 #include <stdint.h>
 
+
 const char* get_protocol_name(uint8_t proto_num) {
     switch (proto_num) {
-        case 1:  return "ICMP";
-        case 6:  return "TCP";
-        case 17: return "UDP";
+        case 1:  return "ICMP";       // Internet Control Message Protocol
+        case 2:  return "IGMP";       // Internet Group Management Protocol
+        case 6:  return "TCP";        // Transmission Control Protocol
+        case 17: return "UDP";        // User Datagram Protocol
+        case 41: return "IPv6";       // IPv6 encapsulation
+        case 43: return "Routing";    // Routing Header for IPv6
+        case 44: return "Fragment";   // Fragment Header for IPv6
+        case 47: return "GRE";        // Generic Routing Encapsulation
+        case 50: return "ESP";        // Encapsulating Security Payload
+        case 51: return "AH";         // Authentication Header
+        case 58: return "ICMPv6";     // ICMP for IPv6
+        case 89: return "OSPF";       // Open Shortest Path First
+        case 132: return "SCTP";      // Stream Control Transmission Protocol
         default: return "Unknown";
     }
 }

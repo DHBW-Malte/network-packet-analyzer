@@ -10,7 +10,7 @@
 ## Description
 
 A lightweight network packet analyzer written in C for Linux systems.
-It captures, parses, and analyzes raw network traffic in real time.
+It captures, parses, and analyzes raw network traffic in real time using `libcap`.
 
 ## Features
 
@@ -25,6 +25,11 @@ It captures, parses, and analyzes raw network traffic in real time.
 
 - GCC
 - `libpcap` development headers
+Install on Ubuntu:
+
+```bash
+sudo apt install libpcap-dev
+```
 
 ### Build
 
@@ -38,4 +43,15 @@ make
 sudo ./netanalyzer
 ```
 
-Root permissions are required to access network interfaces directly.
+***Root permissions are required to access network interfaces directly.***
+
+## Project structure
+
+```text
+src/
+├── main.c         # Entry point
+├── capture.c/.h   # Live packet capture
+├── parser.c/.h    # Protocol-level parsing
+├── analyzer.c/.h  # Statistics and analysis
+└── utils.c/.h     # Helper functions
+```

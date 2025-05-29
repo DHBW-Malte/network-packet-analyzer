@@ -9,12 +9,14 @@ void packet_handler(u_char *args, const struct pcap_pkthdr *header, const u_char
     // Printing second network layer
     uint16_t ethertype = parse_ethernet_layer(packet, header->len);
     // Printing third network layer
-    if (ethertype == 0x0800) { // Parsing if type is IPv4
+    if (ethertype == 0x0800) {
         parse_ipv4_layer(packet, header->len);
-    }
-    if (ethertype == 0x86DD) { // Parsing if type is IPv6
+    } else if (ethertype == 0x86DD) {
         parse_ipv6_layer(packet, header->len);
+    } else if (ethertype == 0x0806) {
+        parse_arp_layer(packet, header->len);
     }
+    printf("\n");
 }
 
 // Function to capture packets of the selected interface

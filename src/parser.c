@@ -33,6 +33,18 @@ struct ipv6_header {
     struct in6_addr dest_ip;
 };
 
+struct arp_header {
+    uint16_t htype;
+    uint16_t ptype;
+    uint8_t hlen;
+    uint8_t plen;
+    uint16_t oper;
+    uint8_t sender_mac[6];
+    uint32_t sender_ip;
+    uint8_t target_mac[6];
+    uint32_t target_ip;
+};
+
 // Function to parse the Ethernet header (first 14 bytes of the packet)
 uint16_t parse_ethernet_layer(const u_char* packet, int length) {
     if (length < 14) {
@@ -113,4 +125,27 @@ void parse_ipv6_layer(const u_char* packet, int length) {
            version, payload_length, get_protocol_name(next_header), hop_limit);
     printf("     └─ Src IP: %s\n", src_ip);
     printf("     └─ Dst IP: %s\n", dest_ip);
+}
+
+void parse_arp_layer(const u_char* packet, int length) {
+    if (length < 14 + sizeof(struct arp_header)) {
+        printf("  └─ ❌ Packet too short for ARP header.\n");
+        return;
+    }
+
+    const struct arp_header* arp = (const struct arp_header*)(packet + 14);
+
+    char sender_ip[INET_ADDRSTRLEN];
+    char target_ip[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &(arp->sender_ip), sender_ip, INET_ADDRSTRLEN);
+    inet_ntop(AF_INET, &(arp->target_ip), target_ip, INET_ADDRSTRLEN);
+
+    printf("  └─ [ARP] Operation: %s\n", (ntohs(arp->oper) == 1) ? "Request" :
+                                           (ntohs(arp->oper) == 2) ? "Reply" : "Unknown");
+    printf("     └─ Sender MAC: ");
+    print_mac(arp->sender_mac);
+    printf(" | Sender IP: %s\n", sender_ip);
+    printf("     └─ Target MAC: ");
+    print_mac(arp->target_mac);
+    printf(" | Target IP: %s\n", target_ip);
 }

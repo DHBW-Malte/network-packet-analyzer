@@ -1,14 +1,17 @@
 #include <pcap.h>
+#include <stdint.h>
 #include <stdio.h>
 #include "../include/capture.h"
 #include "../include/parser.h"
 
 // Function to print out the length of each captured packet
 void packet_handler(u_char *args, const struct pcap_pkthdr *header, const u_char *packet) {
-    printf("Captured a packet with length of [%d]\n", header->len);
-
-    // Printing first network layer
-    parse_ethernet_layer(packet, header->len);
+    // Printing second network layer
+    uint16_t ethertype = parse_ethernet_layer(packet, header->len);
+    // Printing third network layer
+    if (ethertype == 0x0800) { // Parsing if type is IPv4
+        parse_ipv4_layer(packet, header->len);
+    } 
 }
 
 // Function to capture packets of the selected interface

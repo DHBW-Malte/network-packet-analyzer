@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <arpa/inet.h>
 #include "../include/parser.h"
+#include "../include/utils.h"
 
 struct ethernet_header {
     uint8_t dest_mac[6];
@@ -9,17 +10,24 @@ struct ethernet_header {
     uint16_t ethertype;
 };
 
-// Helper function to print MAC address in readable format
-void print_mac(const u_char* mac) {
-    printf("%02x:%02x:%02x:%02x:%02x:%02x",
-           mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-}
+struct ipv4_header {
+    uint8_t version_ihl;
+    uint8_t tos;
+    uint16_t total_length;
+    uint16_t identification;
+    uint16_t flags_fragment;
+    uint8_t ttl;
+    uint8_t protocol;
+    uint16_t checksum;
+    uint32_t src_ip;
+    uint32_t dest_ip;
+};
 
 // Function to parse the Ethernet header (first 14 bytes of the packet)
-void parse_ethernet_layer(const u_char* packet, int length) {
+uint16_t parse_ethernet_layer(const u_char* packet, int length) {
     if (length < 14) {
         printf("❌ Packet too short for Ethernet header.\n");
-        return;
+        return 0;
     }
 
     const struct ethernet_header* eth = (const struct ethernet_header*) packet;
@@ -39,4 +47,32 @@ void parse_ethernet_layer(const u_char* packet, int length) {
     }
 
     printf("\n");
+
+    return ethertype;
+}
+
+// Function to parse the IPv4 layer header
+void parse_ipv4_layer(const u_char* packet, int length) {
+    if (length < 14 + 20) {
+        printf("  └─ ❌ Packet too short for IPv4 header.\n");
+        return;
+    }
+
+    // IPv4-Header starts after 14 bytes (after ethernet header)
+    const struct ipv4_header* ip = (const struct ipv4_header*) (packet + 14);
+
+    uint8_t version = ip->version_ihl >> 4;         // Version are the upper 4 bits
+    uint8_t ihl = ip->version_ihl & 0x0F;           // IHL (Internet Header Length) are the lower 4 bits
+    uint16_t total_length = ntohs(ip->total_length); // Using ntohs to ensure the correct reading order
+    uint8_t protocol = ip->protocol;
+
+    char src_ip[INET_ADDRSTRLEN];
+    char dest_ip[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &(ip->src_ip), src_ip, INET_ADDRSTRLEN);
+    inet_ntop(AF_INET, &(ip->dest_ip), dest_ip, INET_ADDRSTRLEN);
+
+    printf("  └─ [IPv4] Version: %d | IHL: %d (×4 = %d bytes) | Length: %d | Protocol: %s\n",
+           version, ihl, ihl * 4, total_length, get_protocol_name(protocol));
+    printf("     └─ Src IP: %s\n", src_ip);
+    printf("     └─ Dst IP: %s\n", dest_ip);
 }

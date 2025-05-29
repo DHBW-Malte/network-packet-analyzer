@@ -2,29 +2,45 @@
 
 **Author**: Malte Opderbeck  
 **Semester**: 4th  
-**Lecture**: System Programming  
+**Course**: System Programming  
 **Lecturer**: Fabian Zaremba
 
 ---
 
 ## Description
 
-A lightweight network packet analyzer written in C for Linux systems.
-It captures, parses, and analyzes raw network traffic in real time.
+A lightweight, modular **network packet analyzer** written in **C** for Linux systems. 
+It captures, parses, and analyzes raw network traffic in real time using **`libpcap`**.
+
+---
 
 ## Features
 
-- Live packet capture on a selected network interface
-- Protocol-level dissection (Ethernet, IPv4, TCP, UDP, ICMP, ARP)
-- Port and IP address tracking
-- Lightweight command-line output
+- **Live packet capture** on a user-selected network interface
+- **Protocol dissection**:
+  - Ethernet
+  - IPv4 & IPv6
+  - TCP, UDP, ICMP, ICMPv6
+  - ARP
+- **Summary analysis**:
+  - Total packets
+  - Average packet size
+  - Protocol distribution
+
+---
 
 ## Build & Run
 
 ### Prerequisites
 
-- GCC
-- `libpcap` development headers
+- **GCC**
+- **libpcap** development headers
+
+Install on Ubuntu:
+
+```bash
+sudo apt install libpcap-dev
+```
 
 ### Build
 
@@ -35,7 +51,33 @@ make
 ### Run
 
 ```bash
-sudo ./netanalyzer
+sudo ./netanalyzer -c <packet_count>
 ```
 
-Root permissions are required to access network interfaces directly.
+> **Note:** Root permissions are required to access network interfaces.
+
+Example:
+
+```bash
+sudo ./netanalyzer -c 15
+```
+
+---
+
+## Project Structure
+
+```text
+include/
+├── analyzer.h    # Analysis interface and summary struct
+├── parser.h      # Protocol-level parsing functions
+├── utils.h       # Helper functions (e.g. MAC printer)
+
+src/
+├── main.c        # Entry point and interface selection
+├── parser.c      # Protocol parsing (Ethernet, IPv4, IPv6, ARP)
+├── analyzer.c    # Statistics and protocol summary
+├── utils.c       # Helper utilities
+```
+
+---
+

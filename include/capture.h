@@ -1,6 +1,10 @@
 #ifndef CAPTURE_H
 #define CAPTURE_H
 
-void start_capture(const char* interface, int packet_count);
+#include <pcap.h>
+
+void start_capture(const char* device_name, int max_packets);
 
 #endif
+
+

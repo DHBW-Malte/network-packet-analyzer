@@ -2,6 +2,7 @@
 #include <string.h>
 #include "../include/analyzer.h"
 
+// Init for the values of the analyzer
 void init_stats(struct packet_stats* stats) {
     stats->total_packets = 0;
     stats->total_packet_length = 0;
@@ -17,6 +18,7 @@ void init_stats(struct packet_stats* stats) {
     stats->other_transport_count = 0;
 }
 
+// Function to update the stats from the analyzer after each packet
 void update_stats(struct packet_stats* stats, uint16_t ethertype, uint8_t protocol, int packet_length) {
     stats->total_packets++;
     stats->total_packet_length += packet_length;
@@ -43,6 +45,7 @@ void update_stats(struct packet_stats* stats, uint16_t ethertype, uint8_t protoc
     }
 }
 
+// Function to print the analyze
 void print_stats(const struct packet_stats* stats) {
     printf("\n📊 Packet Summary:\n");
     printf("  Total packets: %d\n", stats->total_packets);
@@ -62,22 +65,3 @@ void print_stats(const struct packet_stats* stats) {
     printf("  Other: %d\n", stats->other_transport_count);
 }
 
-void run_analysis(packet_summary_t* summaries, int count) {
-    struct packet_stats stats;
-    init_stats(&stats);
-
-    for (int i = 0; i < count; i++) {
-        const packet_summary_t* s = &summaries[i];
-
-        uint16_t ethertype = 0;
-        if (strchr(s->src_ip, '.')) {
-            ethertype = 0x0800; // IPv4
-        } else if (strchr(s->src_ip, ':')) {
-            ethertype = 0x86DD; // IPv6
-        }
-
-        update_stats(&stats, ethertype, s->protocol, 0);
-    }
-
-    print_stats(&stats);
-}

@@ -3,47 +3,26 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../include/parser.h"
-#include "../include/analyzer.h"
+#include "../include/capture.h"
 
-
+#define DEFAULT_PACKETS 10
 #define MAX_PACKETS 1000
 
-static int packet_count = 0;
-static int max_packets = MAX_PACKETS;
-static packet_summary_t summaries[MAX_PACKETS];
-static struct packet_stats stats;
+static int max_packets = DEFAULT_PACKETS;
 
-void handle_packet(u_char* user, const struct pcap_pkthdr* header, const u_char* packet) {
-    if (packet_count >= max_packets) return;
-
-    uint16_t ethertype = parse_ethernet_layer(packet, header->len);
-    
-    uint8_t protocol = 0;
-
-    if (ethertype == 0x0800) {
-        protocol = parse_ipv4_layer(packet, header->len, &summaries[packet_count]);
-    } else if (ethertype == 0x86DD) {
-        protocol = parse_ipv6_layer(packet, header->len, &summaries[packet_count]);
-    } else if (ethertype == 0x0806) {
-        parse_arp_layer(packet, header->len, &summaries[packet_count]);
-    }
-
-    update_stats(&stats, ethertype, protocol, header->len);
-
-    (void)user;
-    packet_count++;
-}
-
+// Function to start the cli tool (listing available devices and )
 void list_devices_and_capture() {
+    // Variables to store the network devices and error messages
     pcap_if_t* alldevs;
     char errbuf[PCAP_ERRBUF_SIZE];
-
+    
+    // Error handling if libpcap failed to find network devices
     if (pcap_findalldevs(&alldevs, errbuf) == -1) {
         fprintf(stderr, "❌ Error finding devices: %s\n", errbuf);
         exit(1);
     }
-
+    
+    // Listing all founded network device with index
     printf("📡 Available Network Devices:\n");
     int i = 0;
     for (pcap_if_t* d = alldevs; d != NULL; d = d->next) {
@@ -52,50 +31,78 @@ void list_devices_and_capture() {
         printf("\n");
     }
 
-    printf("\nEnter the number of the interface to use: ");
-    int choice;
-    scanf("%d", &choice);
+    // Variables for handling the device selection
+    int choice = -1;
+    pcap_if_t* chosen = NULL;
 
-    pcap_if_t* chosen = alldevs;
-    for (int j = 1; j < choice && chosen != NULL; j++) {
+    // Counting available devices
+    int total_devices = 0;
+    for (pcap_if_t* d = alldevs; d != NULL; d = d->next) {
+        total_devices++;
+    }
+
+    // Loop to ensure valid user input for the device selection
+    while (1) {
+        printf("\nEnter the number of the interface to use (1-%d): ", total_devices);
+
+        if (scanf("%d", &choice) != 1) {
+            fprintf(stderr, "❌ Invalid input. Please enter a number.\n");
+            // Input buffer cleaning after invalid input
+            while (getchar() != '\n');
+            continue;
+        }
+
+        if (choice < 1 || choice > total_devices) {
+            fprintf(stderr, "❌ Invalid selection. Please choose a number between 1 and %d.\n", total_devices);
+            continue;
+        }
+
+        break;
+    }
+
+    // Select the choosen device from the device list
+    chosen = alldevs;
+    for (int j = 1; j < choice; j++) {
         chosen = chosen->next;
     }
-
-    if (!chosen) {
-        fprintf(stderr, "❌ Invalid interface selection.\n");
-        pcap_freealldevs(alldevs);
-        exit(1);
-    }
-
+    
+    // Starting with the capturing, parsing and analyzing
     printf("\n✅ Starting capture on device: %s\n\n", chosen->name);
 
-    pcap_t* handle = pcap_open_live(chosen->name, BUFSIZ, 1, 1000, errbuf);
-    if (!handle) {
-        fprintf(stderr, "❌ Couldn't open device %s: %s\n", chosen->name, errbuf);
-        pcap_freealldevs(alldevs);
-        exit(1);
-    }
-
-    pcap_loop(handle, max_packets, handle_packet, NULL);
-
-    pcap_close(handle);
+    start_capture(chosen->name, max_packets);
     pcap_freealldevs(alldevs);
 }
 
+// Entry-point for the analyzer
 int main(int argc, char* argv[]) {
-    if (argc == 3 && strcmp(argv[1], "-c") == 0) {
-        max_packets = atoi(argv[2]);
-        if (max_packets <= 0 || max_packets > MAX_PACKETS) {
-            fprintf(stderr, "❌ Invalid packet count. Must be between 1 and %d\n", MAX_PACKETS);
+    if (argc > 1) {
+        // Help view for the cli tool
+        if (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0) {
+            printf("📡  Network Packet Analyzer\n\n");
+            printf("Usage:\n");
+            printf("  %s -c <packet_count>      Capture a fixed number of packets (default: %d)\n", argv[0], DEFAULT_PACKETS);
+            printf("  %s -h | --help            Show this help message\n\n", argv[0]);
+            printf("Note:\n");
+            printf("  Requires root privileges for capturing.\n");
+            return 0;
+        }
+        // Handling the -c option to set the amount of packets (default 10)
+        if (strcmp(argv[1], "-c") == 0 && argc == 3) {
+            max_packets = atoi(argv[2]);
+            if (max_packets <= 0 || max_packets > MAX_PACKETS) {
+                fprintf(stderr, "❌ Invalid packet count. Must be between 1 and %d\n", MAX_PACKETS);
+                return 1;
+            }
+        // Handling invalid arguments
+        } else {
+            fprintf(stderr, "❌ Invalid arguments.\n");
+            fprintf(stderr, "Use '%s -h' for help.\n", argv[0]);
             return 1;
         }
     } else {
-        printf("ℹ️ Usage: %s -c <packet_count>\n", argv[0]);
-        printf("   Defaulting to %d packets...\n\n", max_packets);
+        printf("ℹ️ No packet count specified. Defaulting to %d packets...\n\n", DEFAULT_PACKETS);
     }
-
+    // Starting the CLI tool
     list_devices_and_capture();
-    print_stats(&stats);
-
     return 0;
 }

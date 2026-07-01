@@ -6,6 +6,7 @@
 #include "../include/utils.h"
 #include <string.h>
 
+// Structs for the different header
 struct ethernet_header {
     uint8_t dest_mac[6];
     uint8_t src_mac[6];
@@ -140,6 +141,7 @@ uint8_t parse_ipv6_layer(const u_char* packet, int length, packet_summary_t* sum
     return next_header;
 }
 
+// Function to parse the ARP header
 void parse_arp_layer(const u_char* packet, int length, packet_summary_t* summary) {
     if ((size_t)length < 14 + sizeof(struct arp_header)) {
         printf("  └─ ❌ Packet too short for ARP header.\n");

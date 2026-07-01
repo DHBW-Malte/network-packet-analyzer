@@ -29,6 +29,5 @@ void init_stats(struct packet_stats* stats);
 void update_stats(struct packet_stats* stats, uint16_t ethertype, uint8_t protocol, int packet_length);
 void print_stats(const struct packet_stats* stats);
 
-void run_analysis(packet_summary_t* summaries, int count);
 
 #endif
